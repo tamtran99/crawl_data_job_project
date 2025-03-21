@@ -14,6 +14,24 @@ config.read('config.ini')
 DB_CONFIG = config['Database']
 JOB_SETTING = config['Job_Setting']
 
+TELEGRAM_BOT_TOKEN = config['TELEGRAM']['BOT_TOKEN']
+TELEGRAM_CHAT_ID = config['TELEGRAM']['CHANNEL_ID']
+
+# 🔹 Send message to telegram channel
+def send_telegram_message(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Failed to send Telegram message: {e}")
+
+# 🔹 test connection DB
 def test_connection(DB_CONFIG) -> Tuple[bool,str]:
     '''
     This function test connect to DB.
@@ -34,7 +52,8 @@ def test_connection(DB_CONFIG) -> Tuple[bool,str]:
         return (True, db_version[0].split('(')[0].strip())
     except Exception as err:
         return (False, err)
-    
+
+# 🔹 test table DB   
 def test_table(DB_CONFIG) -> bool:
     '''
     This function test is exists linkedin_data_raw table or not
@@ -152,6 +171,8 @@ def parse_time_posted(time_str):
 
     return now - delta
 
+# 🔹 func to crawl data from linked_in -> get job_id -> get infor of each job_id
+
 def get_jobs(JOB_SETTING):
     id_set = set()
     start = 0
@@ -268,26 +289,53 @@ def insert_into_postgres(job_list):
     cursor.close()
     conn.close()
 
+
 if __name__ == '__main__':
+    start_time = datetime.now()
+
     print('Test connection')
     test_conn_resp = test_connection(DB_CONFIG)
     if not test_conn_resp[0]:
-        print(test_conn_resp[1])
+        error_msg = f"❌ Database connection failed: {test_conn_resp[1]}"
+        send_telegram_message(error_msg)
+        print(error_msg)
         exit()
-        
+
     print('Test table')
     test_table_resp = test_table(DB_CONFIG)
     if not test_table_resp:
+        error_msg = "❌ Table check failed: Table does not exist or has invalid schema."
+        send_telegram_message(error_msg)
+        print(error_msg)
         exit()
-            
+
     try:
         job_list = get_jobs(JOB_SETTING)
+        if not job_list:
+            send_telegram_message("⚠️ No jobs found during scraping.")
+            exit()
     except Exception as err:
-        print(err)
+        error_msg = f"❌ Job scraping failed: {err}"
+        send_telegram_message(error_msg)
+        print(error_msg)
         exit()
-    
+
     try:
         insert_into_postgres(job_list)
+        end_time = datetime.now()
+        elapsed_time = end_time - start_time
+        success_msg = (
+            f"✅ Job executed successfully!\n"
+            f"- Inserted: {len(job_list)} jobs\n"
+            f"- Start time: {start_time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"- End time: {end_time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"- Duration: {elapsed_time.total_seconds():.2f} seconds"
+        )
+        send_telegram_message(success_msg)
+        print(success_msg)
     except Exception as err:
-        print(err)
+        error_msg = f"❌ Database insertion failed: {err}"
+        send_telegram_message(error_msg)
+        print(error_msg)
         exit()
+

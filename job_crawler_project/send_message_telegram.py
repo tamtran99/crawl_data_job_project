@@ -1,18 +1,16 @@
 import psycopg2
 import telebot
+import configparser
 
 # Database Configuration
-DB_CONFIG = {
-    "dbname": "postgres",
-    "user": "postgres.esuhrzsmhlzrvgrkwmop",
-    "password": "EWr9AInpTmKi1uwa",
-    "host": "aws-0-ap-southeast-1.pooler.supabase.com",
-    "port": "6543"
-}
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+DB_CONFIG = config['Database']
 
 # Telegram Bot Configuration
-TELEGRAM_BOT_TOKEN = "7943243163:AAFdaB5Y5aBrOZFbvIZ5yco_LKaJ3bgpnJ4"
-TELEGRAM_CHANNEL_ID = "-1002182263976"
+TELEGRAM_BOT_TOKEN = config['TELEGRAM']['BOT_TOKEN']
+TELEGRAM_CHANNEL_ID = config['TELEGRAM']['CHANNEL_ID']
 
 # Initialize Telegram Bot
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
