@@ -1,0 +1,12 @@
+[Job_Setting]
+title = Data Analyst
+location = Ho Chi Minh City
+max_jobs = 15
+
+[Database]
+host = hostname
+port = 5432
+user = username
+password = password
+dbname = dbname
+

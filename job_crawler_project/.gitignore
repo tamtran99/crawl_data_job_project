@@ -1,0 +1,13 @@
+playground.ipynb
+config.ini
+# Bỏ qua file Python bytecode
+__pycache__/
+*.pyc
+
+# Bỏ qua thư mục môi trường ảo
+venv/
+env/
+
+# Bỏ qua file hệ thống
+.DS_Store
+Thumbs.db
